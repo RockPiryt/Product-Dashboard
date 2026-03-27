@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/products.html">Products</a>
+      <a href="/stats.html">Stats</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Products</h1>
+      <p>List of products loaded from backend API.</p>
+      <button id="reloadBtn">Reload products</button>
+      <div id="productsInfo"></div>
+    </div>
+
+    <div class="card">
+      <h2>Add new product</h2>
+      <form id="productForm">
+        <input type="text" id="name" placeholder="Product name" required />
+        <input type="text" id="category" placeholder="Category" required />
+        <input type="number" id="price" placeholder="Price" step="0.01" min="0" required />
+        <button type="submit">Add product</button>
+      </form>
+      <div id="formMessage"></div>
+    </div>
+
+    <div class="card">
+      <h2>Product list</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/products.js"></script>
+</body>
+</html>
