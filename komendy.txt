@@ -9,3 +9,29 @@ docker push ${BACK_IMAGE}:latest
 
 docker push ${FRONT_IMAGE}:${VERSION}
 docker push ${FRONT_IMAGE}:latest
+
+7. Uruchomienie środowiska lokalnie
+Sieć wewnętrzna Dockera
+docker network create product-dashboard-net
+
+Start backendu — bez publikacji portu na hosta
+docker run -d --name backend --network product-dashboard-net -e INSTANCE_ID=backend-v1 "${BACK_IMAGE}:${VERSION}"
+
+Backend działa tylko w sieci Dockera, bo nie ma -p.
+
+Start frontendu — jedyny publiczny kontener
+docker run -d --name frontend --network product-dashboard-net -p 8080:80 "${FRONT_IMAGE}:${VERSION}"
+
+Aplikacja będzie dostępna pod:
+
+http://localhost:8080/
+
+curl -i http://localhost:8080/products.html
+
+curl -i -X POST http://localhost:8080/api/items -H "Content-Type: application/json" -d '{"name":"USB-C Dock","category":"Accessories","price":349}'
+
+Invoke-RestMethod `
+  -Uri "http://localhost:8080/api/items" `
+  -Method POST `
+  -Headers @{ "Content-Type" = "application/json" } `
+  -Body '{"name":"USB-C Dock","category":"Accessories","price":349}'
