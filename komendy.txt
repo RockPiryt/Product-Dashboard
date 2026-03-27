@@ -1,0 +1,11 @@
+docker login
+
+Powershell
+docker build -t "${FRONT_IMAGE}:${VERSION}" -t "${FRONT_IMAGE}:latest" ./frontend
+docker build -t "${BACK_IMAGE}:${VERSION}" -t "${BACK_IMAGE}:latest" ./backend
+
+docker push ${BACK_IMAGE}:${VERSION}
+docker push ${BACK_IMAGE}:latest
+
+docker push ${FRONT_IMAGE}:${VERSION}
+docker push ${FRONT_IMAGE}:latest
