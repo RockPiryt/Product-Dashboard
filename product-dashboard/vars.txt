@@ -1,0 +1,6 @@
+
+windows
+$REGISTRY_USER = "rockpiryt"
+$FRONT_IMAGE = "$REGISTRY_USER/product-dashboard-frontend"
+$BACK_IMAGE = "$REGISTRY_USER/product-dashboard-backend"
+$VERSION = "v2"
