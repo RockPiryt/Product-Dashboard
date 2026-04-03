@@ -58,7 +58,7 @@ docker network rm $NETWORK
 --------------------------------------------
 Wynik polecenia docker history --no-trunc dla obrazu 
 backendu pokazujący kolejność i zawartość warstw.
-docker history --no-trunc "${BACK_IMAGE}:${VERSION}"
+docker history --no-trunc "${BACK_IMAGE}:${VERSION}" > history.txt
 
 docker history "${BACK_IMAGE}:${VERSION}"
 
