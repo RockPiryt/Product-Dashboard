@@ -1,0 +1,48 @@
+
+Eksperyment 1 — cache hit:
+
+Zmodyfikuj tylko jeden plik z kodem aplikacji (np. dodaj endpoint GET /health zwracający {"status":"ok"}).
+[server.js]
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+Przebuduj obraz i wykaż w logu docker build, że warstwa z npm ci NIE została przebudowana (widoczny komunikat CACHED).
+
+docker build `
+  --build-arg IMAGE_VERSION=$VERSION `
+  -t "${BACK_IMAGE}:cache-hit2" `
+  ./backend
+----------------------------
+Eksperyment 2 — cache bust:
+
+Zmodyfikuj package.json (dodaj dowolną zależność, np. "lodash").
+[package.json]
+"lodash": "^4.17.21",
+
+Potem zaktualizuj lockfile:
+cd .\backend
+npm install lodash --save
+cd ..
+
+Przebuduj obraz i wykaż w logu docker build, że warstwa z npm ci została przebudowana (brak komunikatu CACHED).
+docker build `
+  --build-arg IMAGE_VERSION=$VERSION `
+  -t "${BACK_IMAGE}:cache-bust" `
+  ./backend
+--------------------------------------------------
+Eksperyment 3 — porównanie obrazów bazowych:
+Pobierz obrazy node:20 oraz node:20-alpine.
+docker pull node:20
+docker pull node:20-alpine
+
+Porównaj ich rozmiary poleceniem docker images i przedstaw wynik w tabeli.
+docker images node --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}"
+-------------------------
+Eksperyment 4 — skanowanie podatności:
+
+Uruchom docker scout cves <nazwa-obrazu-backendu> lub trivy image <nazwa-obrazu-backendu>.
+Przedstaw wynik: liczba CVE w podziale na poziomy severity (CRITICAL, HIGH, MEDIUM, LOW).
+
+docker scout cves "${BACK_IMAGE}:v1"
+trivy image "${BACK_IMAGE}:v1"
