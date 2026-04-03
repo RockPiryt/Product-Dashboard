@@ -1,6 +1,7 @@
 
 windows
 $REGISTRY_USER = "rockpiryt"
-$FRONT_IMAGE = "$REGISTRY_USER/product-dashboard-frontend-ex"
-$BACK_IMAGE = "$REGISTRY_USER/product-dashboard-backend-ex"
-$VERSION = "v3"
+$FRONT_IMAGE = "$REGISTRY_USER/product-dashboard-frontend-foura"
+$BACK_IMAGE = "$REGISTRY_USER/product-dashboard-backend-foura"
+$VERSION = "v1"
+$NETWORK="product-dashboard-foura"
