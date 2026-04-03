@@ -1,8 +1,23 @@
 docker login
 
 Powershell
-docker build  --no-cache -t "${FRONT_IMAGE}:${VERSION}" -t "${FRONT_IMAGE}:latest" ./frontend
-docker build --no-cache  -t "${BACK_IMAGE}:${VERSION}" -t "${BACK_IMAGE}:latest" ./backend
+docker build --no-cache `
+  --build-arg IMAGE_VERSION=$VERSION `
+  -t "${BACK_IMAGE}:${VERSION}" `
+  -t "${BACK_IMAGE}:latest" `
+  ./backend
+  
+docker build --no-cache `
+  --build-arg NGINX_VERSION=$VERSION `
+  -t "${FRONT_IMAGE}:${VERSION}" `
+  -t "${FRONT_IMAGE}:latest" `
+  ./frontend
+
+-----------------
+gdybym nie tagowala podczas build
+docker tag "${BACK_IMAGE}:${VERSION}" "${BACK_IMAGE}:latest"
+docker tag "${FRONT_IMAGE}:${VERSION}" "${FRONT_IMAGE}:latest"
+
 
 docker push ${BACK_IMAGE}:${VERSION}
 docker push ${BACK_IMAGE}:latest
@@ -10,34 +25,104 @@ docker push ${BACK_IMAGE}:latest
 docker push ${FRONT_IMAGE}:${VERSION}
 docker push ${FRONT_IMAGE}:latest
 
+------------------
+odtworznie
+docker pull "${BACK_IMAGE}:${VERSION}"
+docker pull "${BACK_IMAGE}:latest"
+
+docker pull "${FRONT_IMAGE}:${VERSION}"
+docker pull "${FRONT_IMAGE}:latest"
+------------------------------------------------------
 7. Uruchomienie środowiska lokalnie
 Sieć wewnętrzna Dockera
-docker network create product-dashboard-netex
+docker network create $NETWORK
 
 Start 2x backendu — bez publikacji portu na hosta
 api-a
-docker run -d --name api-a --network product-dashboard-netex -e INSTANCE_ID=api-a "${BACK_IMAGE}:v3"
+docker run -d --name api-a --network $NETWORK -e INSTANCE_ID=api-a "${BACK_IMAGE}:${VERSION}"
 api-b
-docker run -d --name api-b --network product-dashboard-netex -e INSTANCE_ID=api-b "${BACK_IMAGE}:v3"
+docker run -d --name api-b --network $NETWORK -e INSTANCE_ID=api-b "${BACK_IMAGE}:${VERSION}"
 
 
 Start frontendu — jedyny publiczny kontener
-docker run -d --name frontend --network product-dashboard-netex -p 8080:80 "${FRONT_IMAGE}:${VERSION}"
-
-
-Usuwanie:
-docker rm -f frontend api-a api-b
+docker run -d --name frontend --network $NETWORK -p 8080:80 "${FRONT_IMAGE}:${VERSION}"
 
 Aplikacja będzie dostępna pod:
 
 http://localhost:8080/
+----------------------------------------------------
+Usuwanie:
+docker rm -f frontend api-a api-b
+docker network rm $NETWORK
 
-curl -i http://localhost:8080/products.html
+--------------------------------------------
+Wynik polecenia docker history --no-trunc dla obrazu 
+backendu pokazujący kolejność i zawartość warstw.
+docker history --no-trunc "${BACK_IMAGE}:${VERSION}"
 
-curl -i -X POST http://localhost:8080/api/items -H "Content-Type: application/json" -d '{"name":"USB-C Dock","category":"Accessories","price":349}'
+docker history "${BACK_IMAGE}:${VERSION}"
 
-Invoke-RestMethod `
+------------------------------
+Najważniejszy fragment (interpretacja pod zadanie)
+COPY package.json package-lock.json ./   ← najpierw dependencies
+RUN npm ci --omit=dev                   ← instalacja (cache!)
+COPY . .                                ← kod aplikacji później
+
+Polecenie `docker history` pokazuje kolejność warstw obrazu od najnowszej do najstarszej.
+
+Górne warstwy odpowiadają instrukcjom z Dockerfile:
+- CMD uruchamia aplikację przez npm
+- EXPOSE definiuje port 3000
+- USER node zapewnia uruchomienie jako użytkownik nieuprzywilejowany
+- COPY . . kopiuje kod aplikacji
+- RUN npm ci --omit=dev instaluje zależności produkcyjne
+- COPY package.json package-lock.json umożliwia cache warstwy zależności
+
+Kolejność warstw potwierdza optymalizację:
+najpierw kopiowane są pliki zależności, następnie wykonywana jest instalacja, a dopiero później kopiowany jest kod aplikacji.
+
+Dolne warstwy pochodzą z obrazu bazowego node:20-alpine i zawierają system Alpine oraz runtime Node.js.
+-----------------------------
+Wyniki testów potwierdzających działanie adresów /, /products.html, /stats.html oraz /api/stats.
+
+1. Test /
+$response = Invoke-WebRequest -Uri "http://localhost:8080/"
+$response.StatusCode
+$response.Headers["Content-Type"]
+$response.Content.Substring(0,200)
+
+2. Test /products.html
+$response = Invoke-WebRequest -Uri "http://localhost:8080/products.html"
+$response.StatusCode
+$response.Headers["Content-Type"]
+$response.Content.Substring(0,200)
+
+3. Test /stats.html
+$response = Invoke-WebRequest -Uri "http://localhost:8080/stats.html"
+$response.StatusCode
+$response.Headers["Content-Type"]
+$response.Content.Substring(0,200)
+
+4. Test /api/stats
+$response = Invoke-WebRequest -Uri "http://localhost:8080/api/stats"
+$response.StatusCode
+$response.Headers["Content-Type"]
+$response.Headers["X-Cache-Status"]
+$response.Content
+
+5. Powtórny test /api/stats dla cache
+$response = Invoke-WebRequest -Uri "http://localhost:8080/api/stats"
+$response.StatusCode
+$response.Headers["X-Cache-Status"]
+$response.Content
+
+oczekiwane: X-Cache-Status = HIT przy szybkim kolejnym wywołaniu
+
+6. Test POST /api/items
+$response = Invoke-RestMethod `
   -Uri "http://localhost:8080/api/items" `
   -Method POST `
   -Headers @{ "Content-Type" = "application/json" } `
   -Body '{"name":"USB-C Dock","category":"Accessories","price":349}'
+
+$response
