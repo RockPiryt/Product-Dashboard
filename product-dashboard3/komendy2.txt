@@ -1,0 +1,43 @@
+docker login
+
+Powershell
+docker build  --no-cache -t "${FRONT_IMAGE}:${VERSION}" -t "${FRONT_IMAGE}:latest" ./frontend
+docker build --no-cache  -t "${BACK_IMAGE}:${VERSION}" -t "${BACK_IMAGE}:latest" ./backend
+
+docker push ${BACK_IMAGE}:${VERSION}
+docker push ${BACK_IMAGE}:latest
+
+docker push ${FRONT_IMAGE}:${VERSION}
+docker push ${FRONT_IMAGE}:latest
+
+7. Uruchomienie środowiska lokalnie
+Sieć wewnętrzna Dockera
+docker network create product-dashboard-netex
+
+Start 2x backendu — bez publikacji portu na hosta
+api-a
+docker run -d --name api-a --network product-dashboard-netex -e INSTANCE_ID=api-a "${BACK_IMAGE}:v3"
+api-b
+docker run -d --name api-b --network product-dashboard-netex -e INSTANCE_ID=api-b "${BACK_IMAGE}:v3"
+
+
+Start frontendu — jedyny publiczny kontener
+docker run -d --name frontend --network product-dashboard-netex -p 8080:80 "${FRONT_IMAGE}:${VERSION}"
+
+
+Usuwanie:
+docker rm -f frontend api-a api-b
+
+Aplikacja będzie dostępna pod:
+
+http://localhost:8080/
+
+curl -i http://localhost:8080/products.html
+
+curl -i -X POST http://localhost:8080/api/items -H "Content-Type: application/json" -d '{"name":"USB-C Dock","category":"Accessories","price":349}'
+
+Invoke-RestMethod `
+  -Uri "http://localhost:8080/api/items" `
+  -Method POST `
+  -Headers @{ "Content-Type" = "application/json" } `
+  -Body '{"name":"USB-C Dock","category":"Accessories","price":349}'
