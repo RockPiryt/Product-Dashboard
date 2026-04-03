@@ -1,0 +1,34 @@
+6. Pełne czyszczenie (najczęściej używane)
+docker system prune
+
+
+Usuń zatrzymane kontenery
+docker container prune
+
+
+2. Usuń nieużywane obrazy (dangling)
+docker image prune
+
+3.Usuń WSZYSTKIE nieużywane obrazy
+docker image prune -a
+
+4. Usuń nieużywane sieci
+docker network prune
+
+5. Usuń nieużywane volume
+docker volume prune
+
+6. Pełne czyszczenie (najczęściej używane)
+docker system prune
+
+7. FULL CLEAN (najmocniejsze)
+docker system prune -a --volumes
+
+Usuwa:
+
+wszystkie nieużywane kontenery
+wszystkie nieużywane obrazy
+wszystkie nieużywane sieci
+wszystkie nieużywane volumes
+
+to jest „reset środowiska”
