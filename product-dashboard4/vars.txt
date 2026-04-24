@@ -1,0 +1,7 @@
+
+windows
+$REGISTRY_USER = "rockpiryt"
+$FRONT_IMAGE = "$REGISTRY_USER/product-dashboard-frontend-five"
+$BACK_IMAGE = "$REGISTRY_USER/product-dashboard-backend-five"
+$VERSION = "v5"
+$NETWORK="product-dashboard-five"

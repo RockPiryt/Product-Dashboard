@@ -1,0 +1,116 @@
+
+Powershell
+docker build --no-cache `
+  --build-arg IMAGE_VERSION=$VERSION `
+  -t "${BACK_IMAGE}:${VERSION}" `
+  -t "${BACK_IMAGE}:latest" `
+  ./backend
+  
+docker build --no-cache `
+  --build-arg NGINX_VERSION=$VERSION `
+  -t "${FRONT_IMAGE}:${VERSION}" `
+  -t "${FRONT_IMAGE}:latest" `
+  ./frontend
+
+--------------------------------------
+docker push ${BACK_IMAGE}:${VERSION}
+docker push ${BACK_IMAGE}:latest
+
+docker push ${FRONT_IMAGE}:${VERSION}
+docker push ${FRONT_IMAGE}:latest
+-------------------------------------
+docker network create front-net
+docker network create back-net
+----------------------------------
+docker volume create items-data
+-----------------------------
+Backend tylko w back-net, bez publikowania portu 3000:
+docker run -d \
+  --name backend \
+  --network back-net \
+  -v items-data:/data \
+rockpiryt/product-dashboard-backend-five:v5
+
+Nginx w front-net z opublikowanym portem 80:
+docker run -d \
+  --name nginx \
+  --network front-net \
+  -p 80:80 \
+  rockpiryt/product-dashboard-frontend-five:v5
+---------------------
+docker network connect back-net nginx
+
+-------------------
+Dowód persystencji
+
+Dodanie produktu:
+curl -X POST http://localhost/api/items \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Laptop","price":4500}'
+
+Invoke-RestMethod `
+  -Uri http://localhost/api/items `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"name":"Laptop","category":"Electronics","price":4500}'
+
+Sprawdzenie danych
+curl http://localhost/api/items
+
+Invoke-RestMethod http://localhost/api/items
+-------------
+Restart backendu
+docker rm -f backend
+
+docker run -d \
+  --name backend \
+  --network back-net \
+  -v items-data:/data \
+rockpiryt/product-dashboard-backend-five:v5
+
+I ponowne Sprawdzenie
+curl http://localhost/api/items
+Invoke-RestMethod http://localhost/api/items
+
+----------------------------------------
+Dowód izolacji sieciowej
+
+Kontener testowy tylko w front-net:
+
+docker run --rm -it \
+  --name front-test \
+  --network front-net \
+  alpine sh
+
+W środku kontenera:
+docker exec front-test ping backend
+
+Oczekiwany błąd: ping: bad address 'backend'
+-----------------
+Test końcowy po usunięciu lokalnych obrazów
+
+docker rmi rockpiryt/product-dashboard-backend-five:v5
+docker rmi rockpiryt/product-dashboard-frontend-five:v5
+
+docker pull rockpiryt/product-dashboard-backend-five:v5
+docker pull rockpiryt/product-dashboard-frontend-five:v5
+
+docker run -d \
+  --name backend \
+  --network back-net \
+  -v items-data:/data \
+  rockpiryt/product-dashboard-backend-five:v5
+
+docker run -d \
+  --name nginx \
+  --network front-net \
+  -p 80:80 \
+  rockpiryt/product-dashboard-frontend-five:v5
+
+docker network connect back-net nginx
+
+curl http://localhost/api/items
+Invoke-RestMethod http://localhost/api/items
+
+curl http://localhost/api/stats
+Invoke-RestMethod http://localhost/api/stats

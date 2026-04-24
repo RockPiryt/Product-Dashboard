@@ -1,0 +1,26 @@
+# Systemy kontroli wersji
+.git
+.gitignore
+
+# Sekrety
+.env
+.env.*
+*.key
+*.pem
+*.p12
+.aws/
+.ssh/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Dokumentacja i pliki lokalne
+docs/
+*.md
+docker-compose*.yml
+komendy3.txt
+vars.txt
+
