@@ -61,6 +61,11 @@ app.get("/stats", (req, res) => {
   });
 });
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}, instance ${INSTANCE_ID}`);
 });
+
