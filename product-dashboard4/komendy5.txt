@@ -24,28 +24,27 @@ docker network create back-net
 ----------------------------------
 docker volume create items-data
 -----------------------------
-Backend tylko w back-net, bez publikowania portu 3000:
-docker run -d \
-  --name backend \
-  --network back-net \
-  -v items-data:/data \
-rockpiryt/product-dashboard-backend-five:v5
+docker run -d `
+  --name backend `
+  --user root `
+  --network back-net `
+  -v items-data:/data `
+  rockpiryt/product-dashboard-backend-five:v5
 
-Nginx w front-net z opublikowanym portem 80:
-docker run -d \
-  --name nginx \
-  --network front-net \
-  -p 80:80 \
+docker run -d `
+  --name nginx `
+  --network back-net `
+  -p 80:80 `
   rockpiryt/product-dashboard-frontend-five:v5
----------------------
-docker network connect back-net nginx
+
+docker network connect front-net nginx
 
 -------------------
 Dowód persystencji
 
 Dodanie produktu:
-curl -X POST http://localhost/api/items \
-  -H "Content-Type: application/json" \
+curl -X POST http://localhost/api/items `
+  -H "Content-Type: application/json" `
   -d '{"name":"Laptop","price":4500}'
 
 Invoke-RestMethod `
@@ -55,31 +54,34 @@ Invoke-RestMethod `
   -Body '{"name":"Laptop","category":"Electronics","price":4500}'
 
 Sprawdzenie danych
-curl http://localhost/api/items
+curl http://localhost/api/items | ConvertTo-Json -Depth 5
 
-Invoke-RestMethod http://localhost/api/items
+Invoke-RestMethod http://localhost/api/items | ConvertTo-Json -Depth 5
 -------------
 Restart backendu
 docker rm -f backend
 
-docker run -d \
-  --name backend \
-  --network back-net \
-  -v items-data:/data \
-rockpiryt/product-dashboard-backend-five:v5
+docker run -d `
+  --name backend `
+  --user root `
+  --network back-net `
+  -v items-data:/data `
+  rockpiryt/product-dashboard-backend-five:v5
 
 I ponowne Sprawdzenie
 curl http://localhost/api/items
-Invoke-RestMethod http://localhost/api/items
+Invoke-RestMethod http://localhost/api/items | ConvertTo-Json -Depth 5
 
 ----------------------------------------
 Dowód izolacji sieciowej
 
+docker exec nginx wget -qO- http://backend:3000/items
+
 Kontener testowy tylko w front-net:
 
-docker run --rm -it \
-  --name front-test \
-  --network front-net \
+docker run --rm -it `
+  --name front-test `
+  --network front-net `
   alpine sh
 
 W środku kontenera:
@@ -95,22 +97,36 @@ docker rmi rockpiryt/product-dashboard-frontend-five:v5
 docker pull rockpiryt/product-dashboard-backend-five:v5
 docker pull rockpiryt/product-dashboard-frontend-five:v5
 
-docker run -d \
-  --name backend \
-  --network back-net \
-  -v items-data:/data \
+docker run -d `
+  --name backend `
+  --user root `
+  --network back-net `
+  -v items-data:/data `
   rockpiryt/product-dashboard-backend-five:v5
 
-docker run -d \
-  --name nginx \
-  --network front-net \
-  -p 80:80 \
+docker run -d `
+  --name nginx `
+  --network back-net `
+  -p 80:80 `
   rockpiryt/product-dashboard-frontend-five:v5
 
-docker network connect back-net nginx
+docker network connect front-net nginx
 
 curl http://localhost/api/items
 Invoke-RestMethod http://localhost/api/items
 
 curl http://localhost/api/stats
 Invoke-RestMethod http://localhost/api/stats
+
+docker rm -f nginx
+docker logs nginx
+
+docker exec backend ls /data
+docker exec backend cat /data/items.json
+docker inspect backend
+
+---------------------------
+Reset srodowiska
+docker rm -f nginx backend front-test 2>$null
+docker network rm front-net back-net 2>$null
+docker volume rm items-data 2>$null
