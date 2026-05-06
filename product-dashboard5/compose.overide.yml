@@ -1,0 +1,9 @@
+services:
+  backend:
+    environment:
+      NODE_ENV: development
+      DEBUG: "1"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
