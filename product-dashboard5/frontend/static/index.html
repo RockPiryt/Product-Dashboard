@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/products.html">Products</a>
+      <a href="/stats.html">Stats</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Product Dashboard</h1>
+      <p>Demo environment for static frontend + Node.js backend behind Nginx.</p>
+      <small class="muted">Frontend is served by Nginx, API is exposed under /api/.</small>
+    </div>
+
+    <div class="grid">
+      <div class="stat-box">
+        <h2>Frontend</h2>
+        <p>Static HTML/CSS/JS</p>
+      </div>
+      <div class="stat-box">
+        <h2>Backend</h2>
+        <p>Node.js / Express</p>
+      </div>
+      <div class="stat-box">
+        <h2>Proxy</h2>
+        <p>Nginx reverse proxy + cache for /api/stats</p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

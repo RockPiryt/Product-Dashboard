@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stats</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/products.html">Products</a>
+      <a href="/stats.html">Stats</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Statistics</h1>
+      <button id="loadStatsBtn">Refresh stats</button>
+    </div>
+
+    <div class="grid">
+      <div class="stat-box">
+        <h2>Total products</h2>
+        <p id="totalProducts">-</p>
+      </div>
+      <div class="stat-box">
+        <h2>Backend instance</h2>
+        <p id="instanceId">-</p>
+      </div>
+      <div class="stat-box">
+        <h2>Timestamp</h2>
+        <p id="timestamp">-</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Response headers</h2>
+      <p><strong>X-Cache-Status:</strong> <span id="cacheStatus">-</span></p>
+    </div>
+  </main>
+
+  <script src="/stats.js"></script>
+</body>
+</html>
