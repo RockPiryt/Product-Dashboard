@@ -1,132 +1,79 @@
+Healthcheck
+docker compose up -d --build
+docker compose ps
+NAME                 SERVICE   STATUS
+product-db-1         db        Up (healthy)
+product-cache-1      cache     Up (healthy)
+product-backend-1    backend   Up
+product-nginx-1      nginx     Up
 
-Powershell
-docker build --no-cache `
-  --build-arg IMAGE_VERSION=$VERSION `
-  -t "${BACK_IMAGE}:${VERSION}" `
-  -t "${BACK_IMAGE}:latest" `
-  ./backend
-  
-docker build --no-cache `
-  --build-arg NGINX_VERSION=$VERSION `
-  -t "${FRONT_IMAGE}:${VERSION}" `
-  -t "${FRONT_IMAGE}:latest" `
-  ./frontend
 
---------------------------------------
-docker push ${BACK_IMAGE}:${VERSION}
-docker push ${BACK_IMAGE}:latest
+Dlatego dla produkcji bez override trzeba uruchamiać:
 
-docker push ${FRONT_IMAGE}:${VERSION}
-docker push ${FRONT_IMAGE}:latest
--------------------------------------
-docker network create front-net
-docker network create back-net
-----------------------------------
-docker volume create items-data
------------------------------
-docker run -d `
-  --name backend `
-  --user root `
-  --network back-net `
-  -v items-data:/data `
-  rockpiryt/product-dashboard-backend-five:v5
+    docker compose -f compose.yml up -d
 
-docker run -d `
-  --name nginx `
-  --network back-net `
-  -p 80:80 `
-  rockpiryt/product-dashboard-frontend-five:v5
+A dla developmentu:
+    docker compose up -d
+albo jawnie:
+    docker compose -f compose.yml -f compose.override.yml up -d
 
-docker network connect front-net nginx
+--------------------------
+Persystencja PostgreSQL
+curl -X POST http://localhost/api/items \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Persistent Product","price":123.45}'
 
--------------------
-Dowód persystencji
-
-Dodanie produktu:
-curl -X POST http://localhost/api/items `
-  -H "Content-Type: application/json" `
-  -d '{"name":"Laptop","price":4500}'
-
-Invoke-RestMethod `
-  -Uri http://localhost/api/items `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"name":"Laptop","category":"Electronics","price":4500}'
-
-Sprawdzenie danych
-curl http://localhost/api/items | ConvertTo-Json -Depth 5
-
-Invoke-RestMethod http://localhost/api/items | ConvertTo-Json -Depth 5
--------------
-Restart backendu
-docker rm -f backend
-
-docker run -d `
-  --name backend `
-  --user root `
-  --network back-net `
-  -v items-data:/data `
-  rockpiryt/product-dashboard-backend-five:v5
-
-I ponowne Sprawdzenie
-curl http://localhost/api/items
-Invoke-RestMethod http://localhost/api/items | ConvertTo-Json -Depth 5
-
-----------------------------------------
-Dowód izolacji sieciowej
-
-docker exec nginx wget -qO- http://backend:3000/items
-
-Kontener testowy tylko w front-net:
-
-docker run --rm -it `
-  --name front-test `
-  --network front-net `
-  alpine sh
-
-W środku kontenera:
-docker exec front-test ping backend
-
-Oczekiwany błąd: ping: bad address 'backend'
------------------
-Test końcowy po usunięciu lokalnych obrazów
-
-docker rmi rockpiryt/product-dashboard-backend-five:v5
-docker rmi rockpiryt/product-dashboard-frontend-five:v5
-
-docker pull rockpiryt/product-dashboard-backend-five:v5
-docker pull rockpiryt/product-dashboard-frontend-five:v5
-
-docker run -d `
-  --name backend `
-  --user root `
-  --network back-net `
-  -v items-data:/data `
-  rockpiryt/product-dashboard-backend-five:v5
-
-docker run -d `
-  --name nginx `
-  --network back-net `
-  -p 80:80 `
-  rockpiryt/product-dashboard-frontend-five:v5
-
-docker network connect front-net nginx
+docker compose down
+docker compose up -d
 
 curl http://localhost/api/items
-Invoke-RestMethod http://localhost/api/items
 
+Wynik zawiera:
+
+{
+  "name": "Persistent Product",
+  "price": 123.45
+}
+-----------------------------------
+Cache Redis
+curl http://localhost/api/items
+curl http://localhost/api/items
 curl http://localhost/api/stats
-Invoke-RestMethod http://localhost/api/stats
 
-docker rm -f nginx
-docker logs nginx
+Wynik /api/stats:
 
-docker exec backend ls /data
-docker exec backend cat /data/items.json
-docker inspect backend
+{
+  "totalProducts": 1,
+  "cache_hits": 1
+}
+-----------------------------
+Profil tools
+docker compose --profile tools run --rm db-seed
+curl http://localhost/api/items
 
----------------------------
-Reset srodowiska
-docker rm -f nginx backend front-test 2>$null
-docker network rm front-net back-net 2>$null
-docker volume rm items-data 2>$null
+Wynik zawiera:
+
+[
+  { "name": "Widget", "price": 9.99 },
+  { "name": "Gadget", "price": 24.99 },
+  { "name": "Doohickey", "price": 4.49 }
+]
+--------------------------------
+Produkcja vs development
+
+Bez override:
+
+docker compose -f compose.yml config | grep -A5 volumes
+
+Brak bind mountu ./backend:/app.
+
+Z override:
+
+docker compose -f compose.yml -f compose.override.yml config | grep -A5 volumes
+
+Widoczne:
+
+volumes:
+  - type: bind
+    source: ./backend
+    target: /app
