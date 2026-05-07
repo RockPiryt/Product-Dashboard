@@ -44,12 +44,13 @@ Wynik /api/stats:
 
 {
   "totalProducts": 1,
-  "cache_hits": 1
+  "cache_hits": 2
 }
 -----------------------------
 Profil tools
 docker compose --profile tools run --rm db-seed
-curl http://localhost/api/items
+curl http://localhost:8080/api/items 
+bo wsl mam na :80
 
 Wynik zawiera:
 
@@ -58,18 +59,21 @@ Wynik zawiera:
   { "name": "Gadget", "price": 24.99 },
   { "name": "Doohickey", "price": 4.49 }
 ]
+
+lub bezpośrednie sprawdzenie
+docker compose exec db psql -U products -d products -c "SELECT * FROM products;"
 --------------------------------
 Produkcja vs development
 
 Bez override:
 
-docker compose -f compose.yml config | grep -A5 volumes
+docker compose -f compose.yaml config | grep -A5 volumes
 
 Brak bind mountu ./backend:/app.
 
 Z override:
 
-docker compose -f compose.yml -f compose.override.yml config | grep -A5 volumes
+docker compose -f compose.yaml -f compose.override.yaml config | grep -A5 volumes
 
 Widoczne:
 
